@@ -212,21 +212,6 @@ let get_captured_by_ref_invariant_map proc_desc =
   CapturedByRefAnalyzer.exec_cfg cfg () ~initial:VarSet.empty
 
 
-module IntLitSet = Caml.Set.Make (IntLit)
-
-let ignored_constants =
-  let int_lit_constants =
-    List.map
-      ~f:(fun el ->
-        try IntLit.of_string el
-        with Invalid_argument _ ->
-          L.die UserError
-            "Ill-formed option  '%s' for --liveness-ignored-constant: an integer was expected" el )
-      Config.liveness_ignored_constant
-  in
-  IntLitSet.of_list int_lit_constants
-
-
 let checker {IntraproceduralAnalysis.proc_desc; err_log} =
   let captured_by_ref_invariant_map = get_captured_by_ref_invariant_map proc_desc in
   let cfg = CFG.from_pdesc proc_desc in
@@ -234,17 +219,25 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
   (* we don't want to report in harmless cases like int i = 0; if (...) { i = ... } else { i = ... }
      that create an intentional dead store as an attempt to imitate default value semantics.
      use dead stores to a "sentinel" value as a heuristic for ignoring this case *)
+  let is_whitelisted = function
+    | Some c ->
+        let rec helper c = function
+          | hd :: lst ->
+              if Int.(hd = c) then true else helper c lst
+          | [] ->
+              false
+        in
+        helper c Config.liveness_whitelist_constant
+    | None ->
+        false
+  in
   let rec is_sentinel_exp = function
     | Exp.Cast (_, e) ->
         is_sentinel_exp e
     | Exp.Const (Cint i) ->
-        IntLitSet.mem i ignored_constants
-    | Exp.Const (Cfloat f) -> (
-      match Z.of_float f with
-      | z ->
-          IntLitSet.mem (IntLit.of_big_int z) ignored_constants
-      | exception Z.Overflow ->
-          false )
+        IntLit.iszero i || IntLit.isnull i || is_whitelisted (IntLit.to_int i)
+    | Exp.Const (Cfloat 0.0) ->
+        true
     | _ ->
         false
   in

@@ -684,7 +684,7 @@ and buck_build_args =
      $(b,--buck-clang)."
 
 
-and buck_build_args_no_inline_rev =
+and buck_build_args_no_inline =
   CLOpt.mk_string_list ~long:"Xbuck-no-inline"
     ~in_help:InferCommand.[(Capture, manual_buck)]
     "Pass values as command-line arguments to invocations of $(i,`buck build`), don't inline any \
@@ -1200,7 +1200,7 @@ and differential_filter_set =
 
 and () =
   let mk b ?deprecated ~long ?default doc =
-    let (_ : string RevList.t ref) =
+    let (_ : string list ref) =
       CLOpt.mk_string_list ?deprecated ~long
         ~f:(fun issue_id ->
           let issue =
@@ -1460,11 +1460,6 @@ and java_jar_compiler =
     ~meta:"path" "Specify the Java compiler jar used to generate the bytecode"
 
 
-and java_source_parser_experimental =
-  CLOpt.mk_bool ~long:"java-source-parser-experimental"
-    "The experimental Java source parser for declaration locations."
-
-
 and java_version =
   CLOpt.mk_int_opt ~long:"java-version" ?default:Version.java_version
     ~in_help:InferCommand.[(Capture, manual_java); (Analyze, manual_java)]
@@ -1497,8 +1492,8 @@ and liveness_dangerous_classes =
      by the program."
 
 
-and liveness_ignored_constant =
-  CLOpt.mk_string_list ~default:["0"] ~long:"liveness-ignored-constant"
+and liveness_whitelist_constant =
+  CLOpt.mk_int_list ~default:[] ~long:"liveness-whitelist-constant"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "List of integer constants to be ignored by liveness analysis"
 
@@ -1534,7 +1529,7 @@ and linters_def_folder =
       ~meta:"dir" "Specify the folder containing linters files with extension .al"
   in
   let () =
-    CLOpt.mk_set linters_def_folder RevList.empty ~long:"reset-linters-def-folder"
+    CLOpt.mk_set linters_def_folder [] ~long:"reset-linters-def-folder"
       "Reset the list of folders containing linters definitions to be empty (see \
        $(b,linters-def-folder))."
   in
@@ -1599,28 +1594,16 @@ and max_nesting =
      skipped. If omitted, all levels are shown."
 
 
-and memtrace_analysis =
-  CLOpt.mk_bool ~long:"memtrace-analysis-profiling"
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Generate OCaml analysis allocation traces in `infer-out/memtrace`."
-
-
-and memtrace_sampling_rate =
-  CLOpt.mk_float_opt ~long:"memtrace-sampling-rate" ~default:1e-6
-    ~in_help:InferCommand.[(Analyze, manual_generic)]
-    "Sampling rate for Memtrace allocation profiling. Default is 1e-6."
+and method_decls_info =
+  CLOpt.mk_path_opt ~long:"method-decls-info" ~meta:"method_decls_info.json"
+    "Specifies the file containing the method declarations info (eg. start line, end line, class, \
+     method name, etc.) when Infer is run Test Determinator mode with $(b,--test-determinator)."
 
 
 and merge =
   CLOpt.mk_bool ~deprecated:["merge"] ~long:"merge"
     ~in_help:InferCommand.[(Analyze, manual_buck)]
     "Merge the captured results directories specified in the dependency file."
-
-
-and method_decls_info =
-  CLOpt.mk_path_opt ~long:"method-decls-info" ~meta:"method_decls_info.json"
-    "Specifies the file containing the method declarations info (eg. start line, end line, class, \
-     method name, etc.) when Infer is run Test Determinator mode with $(b,--test-determinator)."
 
 
 and ml_buckets =
@@ -1662,15 +1645,17 @@ and nullsafe_disable_field_not_initialized_in_nonstrict_classes =
      marked as @NullsafeStrict. This feature is needed for compatibility reasons."
 
 
-and nullsafe_optimistic_third_party_in_default_mode =
+and nullsafe_optimistic_third_party_params_in_non_strict =
   CLOpt.mk_bool
     ~long:
-      "nullsafe-optimistic-third-party-in-default-mode"
-      (* Turned on for compatibility reasons
-       *) ~default:true
-    "Nullsafe: Unless @Nullsafe annotation is used, treat not annotated third party method params \
-     as if they were annotated as nullable, and return values as if they were annotated as \
-     non-null"
+      "nullsafe-optimistic-third-party-params-in-non-strict"
+      (* Turned on for compatibility reasons.
+         Historically this is because there was no actionable way to change third party annotations.
+         Now that we have such a support, this behavior should be reconsidered, provided
+         our tooling and error reporting is friendly enough to be smoothly used by developers.
+      *) ~default:true
+    "Nullsafe: in this mode we treat non annotated third party method params as if they were \
+     annotated as nullable."
 
 
 and nullsafe_third_party_signatures =
@@ -1877,15 +1862,15 @@ and pulse_cut_to_one_path_procedures_pattern =
      large procedures to prevent too-big states from being produced."
 
 
+and pulse_recency_limit =
+  CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
+    "Maximum number of array elements and structure fields to keep track of for a given array \
+     address."
+
+
 and pulse_intraprocedural_only =
   CLOpt.mk_bool ~long:"pulse-intraprocedural-only"
     "Disable inter-procedural analysis in Pulse. Used for experimentations only."
-
-
-and pulse_isl =
-  CLOpt.mk_bool ~long:"pulse-isl" ~default:false
-    "[Pulse] Incorrectness Separation Logic (ISL) mode: explicit Ok/Error summaries are recorded. \
-     For experiments only."
 
 
 and pulse_max_disjuncts =
@@ -1928,12 +1913,6 @@ and pulse_model_transfer_ownership =
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Methods that should be modelled as transfering memory ownership in Pulse. Accepted formats \
      are method or namespace::method"
-
-
-and pulse_recency_limit =
-  CLOpt.mk_int ~long:"pulse-recency-limit" ~default:32
-    "Maximum number of array elements and structure fields to keep track of for a given array \
-     address."
 
 
 and pulse_report_latent_issues =
@@ -2077,12 +2056,6 @@ and report_formatter =
     ~default:`Phabricator_formatter
     ~symbols:[("none", `No_formatter); ("phabricator", `Phabricator_formatter)]
     ~eq:PolyVariantEqual.( = ) "Which formatter to use when emitting the report"
-
-
-and report_immutable_modifications =
-  CLOpt.mk_bool ~long:"report-immutable-modifications" ~default:false
-    ~in_help:InferCommand.[(Report, manual_generic); (Run, manual_generic)]
-    "Report modifications to immutable fields"
 
 
 and report_previous =
@@ -2238,13 +2211,6 @@ and starvation_whole_program =
     "Run whole-program starvation analysis"
 
 
-and suppress_lint_ignore_types =
-  CLOpt.mk_bool ~long:"suppress-lint-ignore-types" ~default:false
-    "[DEPRECATED] Check only the presence of @SuppressLint but not the issues types specified as \
-     parameters to the annotations when deciding to suppress issues. Use for backwards \
-     compatibility only!"
-
-
 and sqlite_cache_size =
   CLOpt.mk_int ~long:"sqlite-cache-size" ~default:2000
     ~in_help:
@@ -2335,27 +2301,9 @@ and test_filtering =
     "List all the files Infer can report on (should be called from the root of the project)"
 
 
-and topl_max_conjuncts =
-  CLOpt.mk_int ~long:"topl-max-conjuncts" ~default:20
-    "Stop tracking states that reach have at least $(i,int) conjuncts"
-
-
-and topl_max_disjuncts =
-  CLOpt.mk_int ~long:"topl-max-disjuncts" ~default:20
-    "Under-approximate after $(i,int) disjunctions in the domain"
-
-
 and topl_properties =
   CLOpt.mk_path_list ~default:[] ~long:"topl-properties"
-    "[EXPERIMENTAL] Specify a file containing a temporal property definition (e.g., jdk.topl).\n\
-     One needs to also select one of the three implementations, by enabling one of the following \
-     checkers\n\
-     $(b,--pulse)       will run pulse with updated transfer functions\n\
-     $(b,--topl-pulse)  [SLOW] uses SIL-instrumentation, runs pulse, and analyzes pulse summaries\n\
-     $(b,--topl-biabd)  [SLOW] uses SIL-instrumentation, runs biabduction, and analyzes \
-     biabduction summaries\n\
-     Note that enabling topl-pulse or topl-biabd will disable the first implementation using \
-     updated pulse transfer functions."
+    "[EXPERIMENTAL] Specify a file containing a temporal property definition (e.g., jdk.topl)."
 
 
 and profiler_samples =
@@ -2677,12 +2625,11 @@ let post_parsing_initialization command_opt =
   if is_none !symops_per_iteration then symops_per_iteration := symops_timeout ;
   if is_none !seconds_per_iteration then seconds_per_iteration := seconds_timeout ;
   clang_compilation_dbs :=
-    RevList.rev_map ~f:(fun x -> `Raw x) !compilation_database
-    |> RevList.rev_map_append ~f:(fun x -> `Escaped x) !compilation_database_escaped ;
+    List.rev_map ~f:(fun x -> `Raw x) !compilation_database
+    |> List.rev_map_append ~f:(fun x -> `Escaped x) !compilation_database_escaped ;
   (* set analyzer mode to linters in linters developer mode *)
   if !linters_developer_mode then enable_checker Linters ;
-  if !default_linters then
-    linters_def_file := RevList.cons linters_def_default_file !linters_def_file ;
+  if !default_linters then linters_def_file := linters_def_default_file :: !linters_def_file ;
   ( match !analyzer with
   | Linters ->
       disable_all_checkers () ;
@@ -2711,7 +2658,7 @@ let process_linters_doc_url args =
            but got %s"
           arg
   in
-  let linter_doc_url_assocs = RevList.rev_map ~f:linters_doc_url args in
+  let linter_doc_url_assocs = List.rev_map ~f:linters_doc_url args in
   fun ~linter_id -> List.Assoc.find ~equal:String.equal linter_doc_url_assocs linter_id
 
 
@@ -2731,7 +2678,7 @@ and annotation_reachability_cxx_sources = !annotation_reachability_cxx_sources
 
 and annotation_reachability_custom_pairs = !annotation_reachability_custom_pairs
 
-and append_buck_flavors = RevList.to_list !append_buck_flavors
+and append_buck_flavors = !append_buck_flavors
 
 and array_level = !array_level
 
@@ -2745,11 +2692,11 @@ and bo_field_depth_limit = !bo_field_depth_limit
 
 and buck = !buck
 
-and buck_blacklist = RevList.to_list !buck_blacklist
+and buck_blacklist = !buck_blacklist
 
-and buck_build_args = RevList.to_list !buck_build_args
+and buck_build_args = !buck_build_args
 
-and buck_build_args_no_inline = RevList.to_list !buck_build_args_no_inline_rev
+and buck_build_args_no_inline = !buck_build_args_no_inline
 
 and buck_cache_mode = (!buck || !genrule_mode) && not !debug
 
@@ -2777,7 +2724,7 @@ and buck_mode : BuckMode.t option =
       Some JavaFlavor
 
 
-and buck_targets_blacklist = RevList.to_list !buck_targets_blacklist
+and buck_targets_blacklist = !buck_targets_blacklist
 
 and call_graph_schedule = !call_graph_schedule
 
@@ -2786,7 +2733,7 @@ and capture = !capture
 and capture_blacklist = !capture_blacklist
 
 and censor_report =
-  RevList.rev_map !censor_report ~f:(fun str ->
+  List.map !censor_report ~f:(fun str ->
       match String.split str ~on:':' with
       | [issue_type_re; filename_re; reason_str]
         when not String.(is_empty issue_type_re || is_empty filename_re || is_empty reason_str) ->
@@ -2822,11 +2769,11 @@ and clang_compilation_dbs = !clang_compilation_dbs
 
 and clang_compound_literal_init_limit = !clang_compound_literal_init_limit
 
-and clang_extra_flags = RevList.to_list !clang_extra_flags
+and clang_extra_flags = !clang_extra_flags
 
-and clang_blacklisted_flags = RevList.to_list !clang_blacklisted_flags
+and clang_blacklisted_flags = !clang_blacklisted_flags
 
-and clang_blacklisted_flags_with_arg = RevList.to_list !clang_blacklisted_flags_with_arg
+and clang_blacklisted_flags_with_arg = !clang_blacklisted_flags_with_arg
 
 and clang_ignore_regex = !clang_ignore_regex
 
@@ -2935,7 +2882,7 @@ and genrule_mode = !genrule_mode
 and get_linter_doc_url = process_linters_doc_url !linters_doc_url
 
 and help_checker =
-  RevList.rev_map !help_checker ~f:(fun checker_string ->
+  List.map !help_checker ~f:(fun checker_string ->
       match Checker.from_id checker_string with
       | Some checker ->
           checker
@@ -2947,7 +2894,7 @@ and help_checker =
 
 
 and help_issue_type =
-  RevList.rev_map !help_issue_type ~f:(fun id ->
+  List.map !help_issue_type ~f:(fun id ->
       match IssueType.find_from_string ~id with
       | Some issue_type ->
           issue_type
@@ -2979,8 +2926,6 @@ and java_debug_source_file_info = !java_debug_source_file_info
 
 and java_jar_compiler = !java_jar_compiler
 
-and java_source_parser_experimental = !java_source_parser_experimental
-
 and java_version = !java_version
 
 and javac_classes_out = !javac_classes_out
@@ -2993,9 +2938,9 @@ and join_cond = !join_cond
 
 and linter = !linter
 
-and linters_def_file = RevList.to_list !linters_def_file
+and linters_def_file = !linters_def_file
 
-and linters_def_folder = RevList.to_list !linters_def_folder
+and linters_def_folder = !linters_def_folder
 
 and linters_developer_mode = !linters_developer_mode
 
@@ -3009,7 +2954,7 @@ and list_issue_types = !list_issue_types
 
 and liveness_dangerous_classes = !liveness_dangerous_classes
 
-and liveness_ignored_constant = RevList.to_list !liveness_ignored_constant
+and liveness_whitelist_constant = !liveness_whitelist_constant
 
 and load_average =
   match !load_average with None when !buck -> Some (float_of_int ncpu) | _ -> !load_average
@@ -3017,13 +2962,9 @@ and load_average =
 
 and max_nesting = !max_nesting
 
-and memtrace_analysis = !memtrace_analysis
-
-and memtrace_sampling_rate = Option.value_exn !memtrace_sampling_rate
+and method_decls_info = !method_decls_info
 
 and merge = !merge
-
-and method_decls_info = !method_decls_info
 
 and ml_buckets = !ml_buckets
 
@@ -3041,8 +2982,8 @@ and nullsafe_disable_field_not_initialized_in_nonstrict_classes =
   !nullsafe_disable_field_not_initialized_in_nonstrict_classes
 
 
-and nullsafe_optimistic_third_party_in_default_mode =
-  !nullsafe_optimistic_third_party_in_default_mode
+and nullsafe_optimistic_third_party_params_in_non_strict =
+  !nullsafe_optimistic_third_party_params_in_non_strict
 
 
 and nullsafe_third_party_signatures = !nullsafe_third_party_signatures
@@ -3121,26 +3062,26 @@ and pulse_cut_to_one_path_procedures_pattern =
   Option.map ~f:Str.regexp !pulse_cut_to_one_path_procedures_pattern
 
 
-and pulse_intraprocedural_only = !pulse_intraprocedural_only
+and pulse_recency_limit = !pulse_recency_limit
 
-and pulse_isl = !pulse_isl
+and pulse_intraprocedural_only = !pulse_intraprocedural_only
 
 and pulse_max_disjuncts = !pulse_max_disjuncts
 
-and pulse_model_abort = RevList.to_list !pulse_model_abort
+and pulse_model_abort = !pulse_model_abort
 
 and pulse_model_alloc_pattern = Option.map ~f:Str.regexp !pulse_model_alloc_pattern
 
 and pulse_model_release_pattern = Option.map ~f:Str.regexp !pulse_model_release_pattern
 
-and pulse_model_return_nonnull = RevList.to_list !pulse_model_return_nonnull
+and pulse_model_return_nonnull = !pulse_model_return_nonnull
 
 and pulse_model_skip_pattern = Option.map ~f:Str.regexp !pulse_model_skip_pattern
 
 and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
   let models =
     let re = Str.regexp "::" in
-    RevList.map ~f:(fun model -> (model, Str.split re model)) !pulse_model_transfer_ownership
+    List.map ~f:(fun model -> (model, Str.split re model)) !pulse_model_transfer_ownership
   in
   let aux el =
     match el with
@@ -3155,10 +3096,8 @@ and pulse_model_transfer_ownership_namespace, pulse_model_transfer_ownership =
           option
           (List.length splits - 1)
   in
-  RevList.rev_partition_map ~f:aux models
+  List.partition_map ~f:aux models
 
-
-and pulse_recency_limit = !pulse_recency_limit
 
 and pulse_report_latent_issues = !pulse_report_latent_issues
 
@@ -3186,7 +3125,7 @@ and relative_path_backtrack = !relative_path_backtrack
 
 and report = !report
 
-and report_blacklist_files_containing = RevList.to_list !report_blacklist_files_containing
+and report_blacklist_files_containing = !report_blacklist_files_containing
 
 and report_console_limit = !report_console_limit
 
@@ -3198,15 +3137,13 @@ and report_force_relative_path = !report_force_relative_path
 
 and report_formatter = !report_formatter
 
-and report_immutable_modifications = !report_immutable_modifications
+and report_path_regex_blacklist = !report_path_regex_blacklist
 
-and report_path_regex_blacklist = RevList.to_list !report_path_regex_blacklist
-
-and report_path_regex_whitelist = RevList.to_list !report_path_regex_whitelist
+and report_path_regex_whitelist = !report_path_regex_whitelist
 
 and report_previous = !report_previous
 
-and report_suppress_errors = RevList.to_list !report_suppress_errors
+and report_suppress_errors = !report_suppress_errors
 
 and reports_include_ml_loc = !reports_include_ml_loc
 
@@ -3240,15 +3177,15 @@ and print_jbir = !print_jbir
 
 and siof_check_iostreams = !siof_check_iostreams
 
-and siof_safe_methods = RevList.to_list !siof_safe_methods
+and siof_safe_methods = !siof_safe_methods
 
-and skip_analysis_in_path = RevList.to_list !skip_analysis_in_path
+and skip_analysis_in_path = !skip_analysis_in_path
 
 and skip_analysis_in_path_skips_compilation = !skip_analysis_in_path_skips_compilation
 
 and skip_duplicated_types = !skip_duplicated_types
 
-and skip_translation_headers = RevList.to_list !skip_translation_headers
+and skip_translation_headers = !skip_translation_headers
 
 and source_preview = !source_preview
 
@@ -3264,7 +3201,7 @@ and source_files_procedure_names = !source_files_procedure_names
 
 and source_files_freshly_captured = !source_files_freshly_captured
 
-and sources = RevList.to_list !sources
+and sources = !sources
 
 and sourcepath = !sourcepath
 
@@ -3285,8 +3222,6 @@ and starvation_whole_program = !starvation_whole_program
 and subtype_multirange = !subtype_multirange
 
 and summaries_caches_max_size = !summaries_caches_max_size
-
-and suppress_lint_ignore_types = !suppress_lint_ignore_types
 
 and custom_symbols =
   (* Convert symbol lists to regexps just once, here *)
@@ -3317,11 +3252,7 @@ and testing_mode = !testing_mode
 
 and threadsafe_aliases = !threadsafe_aliases
 
-and topl_max_conjuncts = !topl_max_conjuncts
-
-and topl_max_disjuncts = !topl_max_disjuncts
-
-and topl_properties = RevList.to_list !topl_properties
+and topl_properties = !topl_properties
 
 and trace_error = !trace_error
 
@@ -3357,7 +3288,7 @@ and write_dotty = !write_dotty
 
 and write_html = !write_html
 
-and write_html_whitelist_regex = RevList.to_list !write_html_whitelist_regex
+and write_html_whitelist_regex = !write_html_whitelist_regex
 
 and write_website = !write_website
 
@@ -3432,8 +3363,12 @@ let dynamic_dispatch = is_checker_enabled Biabduction
 
 (** Check if a Java package is external to the repository *)
 let java_package_is_external package =
-  RevList.exists external_java_packages ~f:(fun (prefix : string) ->
-      String.is_prefix package ~prefix )
+  match external_java_packages with
+  | [] ->
+      false
+  | _ ->
+      List.exists external_java_packages ~f:(fun (prefix : string) ->
+          String.is_prefix package ~prefix )
 
 
 let is_in_custom_symbols list_name symbol =

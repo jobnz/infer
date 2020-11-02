@@ -118,8 +118,6 @@ val report_custom_error : bool
 
 val report_force_relative_path : bool
 
-val report_immutable_modifications : bool
-
 val report_nullable_inconsistency : bool
 
 val save_compact_summaries : bool
@@ -346,8 +344,6 @@ val java_debug_source_file_info : string option
 
 val java_jar_compiler : string option
 
-val java_source_parser_experimental : bool
-
 val java_version : int option
 
 val javac_classes_out : string
@@ -378,13 +374,9 @@ val list_issue_types : bool
 
 val liveness_dangerous_classes : Yojson.Basic.t
 
-val liveness_ignored_constant : string list
+val liveness_whitelist_constant : int list
 
 val max_nesting : int option
-
-val memtrace_analysis : bool
-
-val memtrace_sampling_rate : float
 
 val merge : bool
 
@@ -407,7 +399,7 @@ val nullsafe_annotation_graph : bool
 
 val nullsafe_disable_field_not_initialized_in_nonstrict_classes : bool
 
-val nullsafe_optimistic_third_party_in_default_mode : bool
+val nullsafe_optimistic_third_party_params_in_non_strict : bool
 
 val nullsafe_third_party_signatures : string option
 
@@ -465,9 +457,9 @@ val project_root : string
 
 val pulse_cut_to_one_path_procedures_pattern : Str.regexp option
 
-val pulse_intraprocedural_only : bool
+val pulse_recency_limit : int
 
-val pulse_isl : bool
+val pulse_intraprocedural_only : bool
 
 val pulse_max_disjuncts : int
 
@@ -486,8 +478,6 @@ val pulse_model_transfer_ownership_namespace : (string * string) list
 val pulse_model_transfer_ownership : string list
 
 val pulse_report_latent_issues : bool
-
-val pulse_recency_limit : int
 
 val pulse_widen_threshold : int
 
@@ -589,8 +579,6 @@ val subtype_multirange : bool
 
 val summaries_caches_max_size : int
 
-val suppress_lint_ignore_types : bool
-
 val symops_per_iteration : int option
 
 val test_determinator : bool
@@ -602,10 +590,6 @@ val test_filtering : bool
 val testing_mode : bool
 
 val threadsafe_aliases : Yojson.Basic.t
-
-val topl_max_conjuncts : int
-
-val topl_max_disjuncts : int
 
 val topl_properties : string list
 
