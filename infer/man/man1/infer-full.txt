@@ -426,7 +426,6 @@ OPTIONS
              DIVIDE_BY_ZERO (disabled by default),
              DO_NOT_REPORT (enabled by default),
              EMPTY_VECTOR_ACCESS (enabled by default),
-             ERADICATE_ANNOTATION_GRAPH (enabled by default),
              ERADICATE_BAD_NESTED_CLASS_ANNOTATION (enabled by default),
              ERADICATE_CONDITION_REDUNDANT (enabled by default),
              ERADICATE_FIELD_NOT_INITIALIZED (enabled by default),
@@ -452,8 +451,6 @@ OPTIONS
              EXECUTION_TIME_COMPLEXITY_INCREASE_UI_THREAD (enabled by
            default),
              EXECUTION_TIME_UNREACHABLE_AT_EXIT (disabled by default),
-             EXPENSIVE_AUTORELEASEPOOL_SIZE (disabled by default),
-             EXPENSIVE_EXECUTION_TIME (disabled by default),
              EXPENSIVE_LOOP_INVARIANT_CALL (enabled by default),
              EXPOSED_INSECURE_INTENT_HANDLING (enabled by default),
              Failure_exe (enabled by default),
@@ -490,7 +487,6 @@ OPTIONS
              MEMORY_LEAK (enabled by default),
              MISSING_REQUIRED_PROP (enabled by default),
              MIXED_SELF_WEAKSELF (enabled by default),
-             MODIFIES_IMMUTABLE (enabled by default),
              MULTIPLE_WEAKSELF (enabled by default),
              MUTABLE_LOCAL_VARIABLE_IN_COMPONENT_FILE (enabled by default),
              Missing_fld (enabled by default),
@@ -502,7 +498,6 @@ OPTIONS
              PRECONDITION_NOT_FOUND (enabled by default),
              PRECONDITION_NOT_MET (enabled by default),
              PREMATURE_NIL_TERMINATION_ARGUMENT (enabled by default),
-             PULSE_UNINITIALIZED_VALUE (disabled by default),
              PURE_FUNCTION (enabled by default),
              QUANDARY_TAINT_ERROR (enabled by default),
              RESOURCE_LEAK (enabled by default),
@@ -792,13 +787,13 @@ OPTIONS
            unique_ptr<type>) will count as dead stores when the variables are
            not read explicitly by the program.           See also infer-analyze(1).
 
-       --liveness-ignored-constant +string
-           List of integer constants to be ignored by liveness analysis       
-    See also infer-analyze(1).
-
        --liveness-only
            Activates: Enable liveness and disable all other checkers
            (Conversely: --no-liveness-only)           See also infer-analyze(1).
+
+       --liveness-whitelist-constant +string
+           List of integer constants to be ignored by liveness analysis       
+    See also infer-analyze(1).
 
        --load-average,-l float
            Do not start new parallel jobs if the load average is greater than
@@ -821,15 +816,6 @@ OPTIONS
            Level of nested procedure calls to show. Trace elements beyond the
            maximum nesting level are skipped. If omitted, all levels are
            shown.           See also infer-explore(1).
-
-       --memtrace-analysis-profiling
-           Activates: Generate OCaml analysis allocation traces in
-           `infer-out/memtrace`. (Conversely:
-           --no-memtrace-analysis-profiling)           See also infer-analyze(1).
-
-       --memtrace-sampling-rate float
-           Sampling rate for Memtrace allocation profiling. Default is 1e-6.       
-    See also infer-analyze(1).
 
        --merge
            Activates: Merge the captured results directories specified in the
@@ -1046,10 +1032,6 @@ OPTIONS
 
        --report-formatter { none | phabricator }
            Which formatter to use when emitting the report           See also infer-report(1).
-
-       --report-immutable-modifications
-           Activates: Report modifications to immutable fields (Conversely:
-           --no-report-immutable-modifications)           See also infer-report(1) and infer-run(1).
 
        --report-previous path
            Report of the base revision to use for comparison           See also infer-reportdiff(1).
@@ -1585,10 +1567,6 @@ INTERNAL OPTIONS
        --java-jar-compiler-reset
            Cancel the effect of --java-jar-compiler.
 
-       --java-source-parser-experimental
-           Activates: The experimental Java source parser for declaration
-           locations. (Conversely: --no-java-source-parser-experimental)
-
        --java-version-reset
            Cancel the effect of --java-version.
 
@@ -1616,8 +1594,8 @@ INTERNAL OPTIONS
        --linters-doc-url-reset
            Set --linters-doc-url to the empty list.
 
-       --liveness-ignored-constant-reset
-           Set --liveness-ignored-constant to the empty list.
+       --liveness-whitelist-constant-reset
+           Set --liveness-whitelist-constant to the empty list.
 
        --load-average-reset
            Cancel the effect of --load-average.
@@ -1630,9 +1608,6 @@ INTERNAL OPTIONS
 
        --max-nesting-reset
            Cancel the effect of --max-nesting.
-
-       --memtrace-sampling-rate-reset
-           Cancel the effect of --memtrace-sampling-rate.
 
        --method-decls-info method_decls_info.json
            Specifies the file containing the method declarations info (eg.
@@ -1685,12 +1660,11 @@ INTERNAL OPTIONS
            This feature is needed for compatibility reasons. (Conversely:
            --no-nullsafe-disable-field-not-initialized-in-nonstrict-classes)
 
-       --no-nullsafe-optimistic-third-party-in-default-mode
-           Deactivates: Nullsafe: Unless @Nullsafe annotation is used, treat
-           not annotated third party method params as if they were annotated
-           as nullable, and return values as if they were annotated as
-           non-null (Conversely:
-           --nullsafe-optimistic-third-party-in-default-mode)
+       --no-nullsafe-optimistic-third-party-params-in-non-strict
+           Deactivates: Nullsafe: in this mode we treat non annotated third
+           party method params as if they were annotated as nullable.
+           (Conversely:
+           --nullsafe-optimistic-third-party-params-in-non-strict)
 
        --nullsafe-strict-containers
            Activates: Warn when containers are used with nullable keys or
@@ -1778,11 +1752,6 @@ INTERNAL OPTIONS
            Activates: Disable inter-procedural analysis in Pulse. Used for
            experimentations only. (Conversely:
            --no-pulse-intraprocedural-only)
-
-       --pulse-isl
-           Activates: [Pulse] Incorrectness Separation Logic (ISL) mode:
-           explicit Ok/Error summaries are recorded. For experiments only.
-           (Conversely: --no-pulse-isl)
 
        --pulse-max-disjuncts int
            Under-approximate after int disjunctions in the domain
@@ -1941,12 +1910,6 @@ INTERNAL OPTIONS
        --summaries-caches-max-size int
            The maximum amount of elements the summaries LRU caches can hold
 
-       --suppress-lint-ignore-types
-           Activates: [DEPRECATED] Check only the presence of @SuppressLint
-           but not the issues types specified as parameters to the
-           annotations when deciding to suppress issues. Use for backwards
-           compatibility only! (Conversely: --no-suppress-lint-ignore-types)
-
        --symops-per-iteration int
            Set the number of symbolic operations per iteration (see
            --iterations)
@@ -1969,23 +1932,9 @@ INTERNAL OPTIONS
            Activates: Mode for testing, where no headers are translated, and
            dot files are created (clang only) (Conversely: --no-testing-mode)
 
-       --topl-max-conjuncts int
-           Stop tracking states that reach have at least int conjuncts
-
-       --topl-max-disjuncts int
-           Under-approximate after int disjunctions in the domain
-
        --topl-properties +path
            [EXPERIMENTAL] Specify a file containing a temporal property
-           definition (e.g., jdk.topl).           One needs to also select one of the three implementations, by
-           enabling one of the following checkers
-           --pulse       will run pulse with updated transfer functions
-           --topl-pulse  [SLOW] uses SIL-instrumentation, runs pulse, and
-           analyzes pulse summaries
-           --topl-biabd  [SLOW] uses SIL-instrumentation, runs biabduction,
-           and analyzes biabduction summaries
-           Note that enabling topl-pulse or topl-biabd will disable the
-           first implementation using updated pulse transfer functions.
+           definition (e.g., jdk.topl).
 
        --topl-properties-reset
            Set --topl-properties to the empty list.
